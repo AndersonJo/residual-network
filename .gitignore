@@ -4,3 +4,7 @@
 
 # Python 
 *.pyc
+
+# Dataset
+cifar-10-python.tar.gz
+_dataset
