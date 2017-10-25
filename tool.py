@@ -4,6 +4,7 @@ import pickle
 import tarfile
 from urllib.request import urlopen
 import tensorflow as tf
+import scipy
 
 import numpy as np
 
@@ -81,15 +82,18 @@ def _preprocessing1(data_path, force=False):
         data_y.append(rawdata[b'labels'])
     rawdata = unpickle(os.path.join(uncompressed_dir, 'test_batch'))
 
-    train_x = np.array(data_x).reshape(-1, 32, 32, 3)
-    train_y = _to_onehot(np.array(data_y).reshape(-1))
-    test_x = np.array(rawdata[b'data']).reshape(-1, 32, 32, 3)
-    test_y = _to_onehot(np.array(rawdata[b'labels']).reshape(-1))
+    train_x = np.array(data_x).reshape(-1, 3, 32, 32)
+    train_x = train_x.transpose([0, 2, 3, 1])
+    train_y = np.array(data_y).reshape(-1)
+
+    test_x = np.array(rawdata[b'data']).reshape(-1, 3, 32, 32)
+    test_x = test_x.transpose([0, 2, 3, 1])
+    test_y = np.array(rawdata[b'labels']).reshape(-1)
 
     dataset = dict()
-    dataset['train_x'] = train_x
+    dataset['train_x'] = train_x.astype('float32')
     dataset['train_y'] = train_y
-    dataset['test_x'] = test_x
+    dataset['test_x'] = test_x.astype('float32')
     dataset['test_y'] = test_y
 
     f = open(preprocessed_path, 'wb')
@@ -105,6 +109,11 @@ def load_data(data_path):
 
     dataset = pickle.load(open(prep_path, 'rb'))
     return dataset['train_x'], dataset['train_y'], dataset['test_x'], dataset['test_y']
+
+
+def numpy_to_image(matrix: np.array, path: str):
+    import scipy.misc
+    scipy.misc.imsave(path, matrix)
 
 
 if __name__ == '__main__':

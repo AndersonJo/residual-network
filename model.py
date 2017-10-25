@@ -25,13 +25,15 @@ class ResNet(object):
 
         self.batch = batch
         self.n_label = n_label
-        self.x_ts = tf.placeholder('float', [batch, 32, 32, 3]) if input is None else input
-        self.y_ts = tf.placeholder('int32', [batch]) if output is None else output
+        self.x_ts = tf.placeholder('float', [None, 32, 32, 3]) if input is None else input
+        self.y_ts = tf.placeholder('int64', [None]) if output is None else output
 
         self.sess = None
         self._names = dict()
         self.layers = list()
         self.layers.append(self.x_ts)
+
+        self.saver = None
 
     def create_variable(self, name: str, shape: tuple, dtype=tf.float32,
                         initializer=xavier_initializer(), regularizer: str = None):
@@ -170,20 +172,29 @@ class ResNet(object):
         self.layers.append(output)
         return output
 
-    def loss(self, input_layer):
+    def loss(self):
         loss_f = tf.nn.sparse_softmax_cross_entropy_with_logits
-        cross_entropy = loss_f(logits=input_layer, labels=self.y_ts, name='cross_entropy')
+        cross_entropy = loss_f(logits=self.last_layer, labels=self.y_ts, name='cross_entropy')
         cross_entropy_mean = tf.reduce_mean(cross_entropy, name='cross_entropy_mean')
         return cross_entropy_mean
 
-    def compile(self):
+    def compile(self) -> tf.Session:
         gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.1, allow_growth=True)
-        sess: tf.InteractiveSession = tf.InteractiveSession(config=tf.ConfigProto(gpu_options=gpu_options))
+        sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
         sess.run(tf.global_variables_initializer())
         self.sess = sess
+        return sess
+
+    def save(self, path='/tmp/resnet_anderson.ckpt'):
+        if self.saver is None:
+            self.saver = tf.train.Saver()
+        self.saver.save(self.sess, path)
+
+    def restore(self, path='/tmp/resnet_anderson.ckpt'):
+        self.saver.restore(self.sess, path)
 
     @property
-    def last_layer(self):
+    def last_layer(self) -> tf.Tensor:
         return self.layers[-1]
 
     def _naming(self, name=None):
