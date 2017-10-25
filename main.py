@@ -13,8 +13,20 @@ parser = parser.parse_args()
 def main():
     train_x, train_y, test_x, test_y = load_data(parser.datapath)
 
-    resnet = ResNet(34)
-    resnet.create_model()
+    resnet = ResNet()
+    with tf.variable_scope('input_scope'):
+        h = resnet.init_block(channel=[3, 16])
+
+    with tf.variable_scope('residual01'):
+        h = resnet.residual_block(h, filter=[3, 3], channel=[16, 32])
+        h = resnet.residual_block(h, filter=[3, 3], channel=[32, 32])
+        h = resnet.residual_block(h, filter=[3, 3], channel=[32, 32])
+        h = resnet.residual_block(h, filter=[3, 3], channel=[32, 32])
+        h = resnet.residual_block(h, filter=[3, 3], channel=[32, 32])
+        h = resnet.residual_block(h, filter=[3, 3], channel=[32, 32])
+
+    with tf.variable_scope('residual02'):
+        pass
     resnet.compile()
 
 
