@@ -13,7 +13,7 @@ parser = argparse.ArgumentParser(description="CIFAR-10 Classification with Deep 
 parser.add_argument('--mode', default='train', type=str, help='"train" or "test"')
 parser.add_argument('--datapath', default='/tmp/cifar10', type=str, help='the directory path to store Iris data set')
 parser.add_argument('--epoch', default=30, type=int, )
-parser.add_argument('--batch', default=32, type=int, help='batch size')
+parser.add_argument('--batch', default=64, type=int, help='batch size')
 parser.add_argument('--save_interval', default=5000, type=int,
                     help='Automatically save the model after specific time interval')
 parser.add_argument('--visualize_interval', default=100, type=int, help='The interval value to print status like loss')
