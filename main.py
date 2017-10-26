@@ -135,11 +135,12 @@ def main():
     resnet = ResNet(batch=parser.batch)
     create_model(resnet)
     resnet.compile()
-    resnet.restore()
+
 
     if parser.mode == 'train':
         train(resnet)
     elif parser.mode == 'test':
+        resnet.restore()
         evaluate(resnet)
 
 

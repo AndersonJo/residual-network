@@ -25,7 +25,6 @@ cluster_spec = json.load(open('config.json', 'rt'))
 cluster = tf.train.ClusterSpec(cluster_spec)
 server = tf.train.Server(cluster_spec, job_name='host', task_index=0)
 
-print('nnnnnnnnnnnnnnnnnnnnn', server.target)
 
 def create_model(resnet: ResNet):
     with tf.variable_scope('input_scope'):
@@ -142,7 +141,6 @@ def main():
     resnet = ResNet(batch=parser.batch)
     create_model(resnet)
     resnet.compile(target=server.target)
-
 
     if parser.mode == 'train':
         train(resnet)
