@@ -118,7 +118,6 @@ def train(resnet, interval=parser.visualize_interval):
 
 
 def evaluate(resnet, batch_size=parser.batch):
-    sess = resnet.sess
     correct_prediction = tf.equal(tf.argmax(resnet.last_layer, 1), y=resnet.y_ts)
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
     resnet.compile(target=server.target)
@@ -129,7 +128,7 @@ def evaluate(resnet, batch_size=parser.batch):
     accuracies = list()
     for i in range(0, 10000, batch_size):
         if i + batch_size < 10000:
-            _acc = sess.run(accuracy, feed_dict={
+            _acc = resnet.sess.run(accuracy, feed_dict={
                 resnet.x_ts: test_x[i:i + batch_size],
                 resnet.y_ts: test_y[i:i + batch_size]})
             accuracies.append(_acc)
