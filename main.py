@@ -1,10 +1,11 @@
 import argparse
+from datetime import datetime
 from queue import deque
 
 import numpy as np
 import tensorflow as tf
 from keras.preprocessing.image import ImageDataGenerator
-
+import logging
 from resnet.model import ResNet
 from resnet.tool import load_data
 
@@ -18,6 +19,17 @@ parser.add_argument('--save_interval', default=5000, type=int,
                     help='Automatically save the model after specific time interval')
 parser.add_argument('--visualize_interval', default=100, type=int, help='The interval value to print status like loss')
 parser = parser.parse_args()
+
+# Logging
+logger = logging.getLogger('resnet')
+logger.setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s - %(message)s')
+
+stream_handler = logging.StreamHandler()
+stream_handler.setLevel(logging.DEBUG)
+stream_handler.setFormatter(formatter)
+logger.addHandler(stream_handler)
+logger.propagate = False
 
 
 def create_model(resnet: ResNet):
@@ -93,6 +105,7 @@ def train(resnet, interval=parser.visualize_interval):
 
     iter_count = 0
     _losses = deque(maxlen=interval)
+    time_point = datetime.now()
     for epoch in range(1, parser.epoch + 1):
         sample_count = 0
 
@@ -102,17 +115,22 @@ def train(resnet, interval=parser.visualize_interval):
 
             # Visualize
             _losses.append(_loss)
-            iter_count += 1
-            sample_count += 1
             if i % interval == 0:
                 _loss = np.mean(_losses)
-                print(f'[epoch:{epoch:02}] loss:{_loss:<7.4}  '
-                      f'sample_count:{sample_count:<5}  '
-                      f'iteration:{iter_count:<5}  ')
+                time_diff = round((datetime.now() - time_point).total_seconds(), 2)
+                time_point = datetime.now()
+                logger.info(f'[epoch:{epoch:02}] loss:{_loss:<7.4}'
+                            f'time-taken:{time_diff:<7.4}'
+                            f'sample:{sample_count:<5}'
+                            f'iter:{iter_count:<5}')
+
+            # Add up count
+            iter_count += 1
+            sample_count += 1
 
             # Save
             if iter_count % parser.save_interval == 0:
-                print(f'Model has been successfully saved at iteration = {iter_count}')
+                logger.info(f'Model has been successfully saved at iteration = {iter_count}')
                 resnet.save()
 
 
@@ -131,7 +149,7 @@ def evaluate(resnet, batch_size=parser.batch):
                 resnet.y_ts: test_y[i:i + batch_size]})
             accuracies.append(_acc)
 
-    print('Accuracy', np.mean(accuracies))
+    logger.info('Accuracy', np.mean(accuracies))
 
 
 def main():
