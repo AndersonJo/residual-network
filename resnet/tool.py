@@ -31,6 +31,21 @@ def _download(dest_dir):
     return tar_path
 
 
+def _download_from_hdfs(dest_dir):
+    import hdfs
+    tar_path = os.path.abspath(os.path.join(dest_dir, 'cifar-10-python.tar.gz'))
+
+    # 저장할 디렉토리 생성
+    if not os.path.exists(dest_dir):
+        os.mkdir(dest_dir)
+    # 파일이 존재하지 않으면 다운로드
+    if not os.path.exists(tar_path):
+        print('Start downloading CIFAR-10 dataset from HDFS')
+        print(f'the path to save: {tar_path}')
+        client = hdfs.InsecureClient(url='http://node1.samsung.com:50070/', user='ocrbg1')
+        client.download('/user/user001/cifar-10-python.tar.gz', tar_path)
+
+
 def _uncompress(data_path):
     """
     압축된 cifar-10-python.tar.gz 파일을 읽어서 data_path에 압축을 해제한다.
@@ -101,6 +116,7 @@ def _preprocessing1(data_path, force=False):
 
 def load_data(data_path):
     _download(data_path)
+    # _download_from_hdfs(data_path)
     _uncompress(data_path)
     prep_path = _preprocessing1(data_path)
 
