@@ -178,9 +178,10 @@ class ResNet(object):
         cross_entropy_mean = tf.reduce_mean(cross_entropy, name='cross_entropy_mean')
         return cross_entropy_mean
 
-    def compile(self) -> tf.Session:
+    def compile(self, target=None) -> tf.Session:
+        print('xxxxxxxxxxxxxxxxxxxxxxxxx', target)
         gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.1, allow_growth=True)
-        sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
+        sess = tf.Session(target, config=tf.ConfigProto(gpu_options=gpu_options))
         sess.run(tf.global_variables_initializer())
         self.sess = sess
         return sess
