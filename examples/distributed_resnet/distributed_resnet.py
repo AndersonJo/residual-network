@@ -20,11 +20,6 @@ parser.add_argument('--save_interval', default=5000, type=int,
 parser.add_argument('--visualize_interval', default=100, type=int, help='The interval value to print status like loss')
 parser = parser.parse_args()
 
-# Cluster Initialization
-cluster_spec = json.load(open('config.json', 'rt'))
-cluster = tf.train.ClusterSpec(cluster_spec)
-server = tf.train.Server(cluster_spec, job_name='host', task_index=0)
-
 
 def create_model(resnet: ResNet):
     with tf.variable_scope('input_scope'):
@@ -140,6 +135,11 @@ def evaluate(resnet, batch_size=parser.batch):
 def main():
     resnet = ResNet(batch=parser.batch)
     create_model(resnet)
+
+    # Cluster Initialization
+    cluster_spec = json.load(open('config.json', 'rt'))
+    cluster = tf.train.ClusterSpec(cluster_spec)
+    server = tf.train.Server(cluster, job_name='host', task_index=0)
     resnet.compile(target=server.target)
 
     if parser.mode == 'train':

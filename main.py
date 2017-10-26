@@ -140,7 +140,6 @@ def main():
     create_model(resnet)
     resnet.compile()
 
-
     if parser.mode == 'train':
         train(resnet)
     elif parser.mode == 'test':
