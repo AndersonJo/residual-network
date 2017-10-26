@@ -25,7 +25,7 @@ def create_model(resnet: ResNet):
     with tf.variable_scope('input_scope'):
         h = resnet.init_block(filter=[7, 7], channel=[3, 64], max_pool=False)
 
-    with tf.variable_scope('residual01'), tf.device('/job:worker/task:1'):
+    with tf.variable_scope('residual01'), tf.device('/job:worker/task:0'):
         h = resnet.residual_block(h, filter=[3, 3], channel=[64, 64])
         h = resnet.residual_block(h, filter=[3, 3], channel=[64, 64])
         h = resnet.residual_block(h, filter=[3, 3], channel=[64, 64])
@@ -33,7 +33,7 @@ def create_model(resnet: ResNet):
         h = resnet.residual_block(h, filter=[3, 3], channel=[64, 64])
         h = resnet.residual_block(h, filter=[3, 3], channel=[64, 64])
 
-    with tf.variable_scope('residual02'), tf.device('/job:worker/task:1'):
+    with tf.variable_scope('residual02'), tf.device('/job:worker/task:0'):
         h = resnet.max_pool(h, kernel=[2, 2], stride=[2, 2])
         h = resnet.residual_block(h, filter=[3, 3], channel=[64, 128])
         h = resnet.residual_block(h, filter=[3, 3], channel=[128, 128])
@@ -44,7 +44,7 @@ def create_model(resnet: ResNet):
         h = resnet.residual_block(h, filter=[3, 3], channel=[128, 128])
         h = resnet.residual_block(h, filter=[3, 3], channel=[128, 128])
 
-    with tf.variable_scope('residual03'), tf.device('/job:worker/task:0'):
+    with tf.variable_scope('residual03'), tf.device('/job:worker/task:1'):
         h = resnet.max_pool(h, kernel=[2, 2], stride=[2, 2])
         h = resnet.residual_block(h, filter=[3, 3], channel=[128, 256])
         h = resnet.residual_block(h, filter=[3, 3], channel=[256, 256])
@@ -59,7 +59,7 @@ def create_model(resnet: ResNet):
         h = resnet.residual_block(h, filter=[3, 3], channel=[256, 256])
         h = resnet.residual_block(h, filter=[3, 3], channel=[256, 256])
 
-    with tf.variable_scope('residual04'), tf.device('/job:worker/task:0'):
+    with tf.variable_scope('residual04'), tf.device('/job:worker/task:1'):
         h = resnet.max_pool(h, kernel=[2, 2], stride=[2, 2])
         h = resnet.residual_block(h, filter=[3, 3], channel=[256, 512])
         h = resnet.residual_block(h, filter=[3, 3], channel=[512, 512])
