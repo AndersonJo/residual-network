@@ -4,6 +4,7 @@ import tarfile
 from urllib.request import urlopen
 
 import numpy as np
+from tensorflow.python.client import device_lib
 
 # Constants
 CIFAR_URL = 'https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz'

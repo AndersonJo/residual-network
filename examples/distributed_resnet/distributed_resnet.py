@@ -5,11 +5,9 @@ from queue import deque
 import numpy as np
 import tensorflow as tf
 from keras.preprocessing.image import ImageDataGenerator
-
 from resnet.model import ResNet
 from resnet.tool import load_data
 
-# Parse Arguments
 parser = argparse.ArgumentParser(description="CIFAR-10 Classification with Deep Residual Neural Network")
 parser.add_argument('--mode', default='train', type=str, help='"train" or "test"')
 parser.add_argument('--datapath', default='/tmp/cifar10', type=str, help='the directory path to store Iris data set')
@@ -44,7 +42,7 @@ def create_model(resnet: ResNet):
         h = resnet.residual_block(h, filter=[3, 3], channel=[128, 128])
         h = resnet.residual_block(h, filter=[3, 3], channel=[128, 128])
 
-    with tf.variable_scope('residual03'), tf.device('/job:worker/task:1'):
+    with tf.variable_scope('residual03'), tf.device('/job:worker/task:0'):
         h = resnet.max_pool(h, kernel=[2, 2], stride=[2, 2])
         h = resnet.residual_block(h, filter=[3, 3], channel=[128, 256])
         h = resnet.residual_block(h, filter=[3, 3], channel=[256, 256])
@@ -68,7 +66,7 @@ def create_model(resnet: ResNet):
         h = resnet.residual_block(h, filter=[3, 3], channel=[512, 512])
         h = resnet.residual_block(h, filter=[3, 3], channel=[512, 512])
 
-    with tf.variable_scope('fc'):
+    with tf.variable_scope('fc'), tf.device('/job:worker/task:1'):
         h = resnet.avg_pool(h, kernel=[2, 2], stride=[2, 2])
         h = resnet.fc(h)
     return h
@@ -140,12 +138,21 @@ def main():
     cluster_spec = json.load(open('config.json', 'rt'))
     cluster = tf.train.ClusterSpec(cluster_spec)
     server = tf.train.Server(cluster, job_name='host', task_index=0)
-    resnet.compile(target=server.target)
 
-    if parser.mode == 'train':
-        train(resnet)
-    elif parser.mode == 'test':
-        evaluate(resnet)
+    print('-' * 60)
+    print(cluster)
+    print('-' * 60)
+    print(dir(cluster))
+    print('-' * 60)
+
+    sess: tf.Session = resnet.compile(target=server.target)
+    print(sess)
+
+
+    # if parser.mode == 'train':
+    #     train(resnet)
+    # elif parser.mode == 'test':
+    #     evaluate(resnet)
 
 
 if __name__ == '__main__':

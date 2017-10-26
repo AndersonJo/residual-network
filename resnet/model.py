@@ -180,7 +180,9 @@ class ResNet(object):
 
     def compile(self, target=None) -> tf.Session:
         gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.5, allow_growth=True)
-        sess = tf.Session(target, config=tf.ConfigProto(gpu_options=gpu_options))
+        sess = tf.Session(target, config=tf.ConfigProto(gpu_options=gpu_options,
+                                                        allow_soft_placement=False,
+                                                        log_device_placement=False))
         sess.run(tf.global_variables_initializer())
         self.sess = sess
         return sess
