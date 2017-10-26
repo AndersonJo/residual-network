@@ -15,15 +15,20 @@ parser.add_argument('--epoch', default=30, type=int, )
 parser.add_argument('--batch', default=32, type=int, help='batch size')
 parser.add_argument('--save_interval', default=5000, type=int,
                     help='Automatically save the model after specific time interval')
-parser.add_argument('--visualize_interval', default=100, type=int, help='The interval value to print status like loss')
+parser.add_argument('--visualize_interval', default=20, type=int, help='The interval value to print status like loss')
 parser = parser.parse_args()
+
+# Cluster Initialization
+cluster_spec = json.load(open('config.json', 'rt'))
+cluster = tf.train.ClusterSpec(cluster_spec)
+server = tf.train.Server(cluster, job_name='host', task_index=0)
 
 
 def create_model(resnet: ResNet):
     with tf.variable_scope('input_scope'):
         h = resnet.init_block(filter=[7, 7], channel=[3, 64], max_pool=False)
 
-    with tf.variable_scope('residual01'), tf.device('/job:worker/task:0'):
+    with tf.variable_scope('residual01'), tf.device('/job:worker/task:0/gpu:0'):
         h = resnet.residual_block(h, filter=[3, 3], channel=[64, 64])
         h = resnet.residual_block(h, filter=[3, 3], channel=[64, 64])
         h = resnet.residual_block(h, filter=[3, 3], channel=[64, 64])
@@ -31,7 +36,7 @@ def create_model(resnet: ResNet):
         h = resnet.residual_block(h, filter=[3, 3], channel=[64, 64])
         h = resnet.residual_block(h, filter=[3, 3], channel=[64, 64])
 
-    with tf.variable_scope('residual02'), tf.device('/job:worker/task:0'):
+    with tf.variable_scope('residual02'), tf.device('/job:worker/task:0/gpu:0'):
         h = resnet.max_pool(h, kernel=[2, 2], stride=[2, 2])
         h = resnet.residual_block(h, filter=[3, 3], channel=[64, 128])
         h = resnet.residual_block(h, filter=[3, 3], channel=[128, 128])
@@ -42,7 +47,7 @@ def create_model(resnet: ResNet):
         h = resnet.residual_block(h, filter=[3, 3], channel=[128, 128])
         h = resnet.residual_block(h, filter=[3, 3], channel=[128, 128])
 
-    with tf.variable_scope('residual03'), tf.device('/job:worker/task:0'):
+    with tf.variable_scope('residual03'), tf.device('/job:worker/task:0/gpu:0'):
         h = resnet.max_pool(h, kernel=[2, 2], stride=[2, 2])
         h = resnet.residual_block(h, filter=[3, 3], channel=[128, 256])
         h = resnet.residual_block(h, filter=[3, 3], channel=[256, 256])
@@ -57,7 +62,7 @@ def create_model(resnet: ResNet):
         h = resnet.residual_block(h, filter=[3, 3], channel=[256, 256])
         h = resnet.residual_block(h, filter=[3, 3], channel=[256, 256])
 
-    with tf.variable_scope('residual04'), tf.device('/job:worker/task:1'):
+    with tf.variable_scope('residual04'), tf.device('/job:host/task:0/gpu:0'):
         h = resnet.max_pool(h, kernel=[2, 2], stride=[2, 2])
         h = resnet.residual_block(h, filter=[3, 3], channel=[256, 512])
         h = resnet.residual_block(h, filter=[3, 3], channel=[512, 512])
@@ -66,17 +71,18 @@ def create_model(resnet: ResNet):
         h = resnet.residual_block(h, filter=[3, 3], channel=[512, 512])
         h = resnet.residual_block(h, filter=[3, 3], channel=[512, 512])
 
-    with tf.variable_scope('fc'), tf.device('/job:worker/task:1'):
+    with tf.variable_scope('fc'), tf.device('/job:host/task:0/gpu:0'):
         h = resnet.avg_pool(h, kernel=[2, 2], stride=[2, 2])
         h = resnet.fc(h)
     return h
 
 
 def train(resnet, interval=parser.visualize_interval):
-    loss = resnet.loss()
-    adam = tf.train.AdamOptimizer()
-    train_op = adam.minimize(loss)
-    resnet.compile()
+    with tf.variable_scope('fc'), tf.device('/job:host/task:0/gpu:0'):
+        loss = resnet.loss()
+        adam = tf.train.AdamOptimizer()
+        train_op = adam.minimize(loss)
+        resnet.compile(target=server.target)
 
     # Get Data
     train_x, train_y, test_x, test_y = load_data(parser.datapath)
@@ -115,6 +121,7 @@ def evaluate(resnet, batch_size=parser.batch):
     sess = resnet.sess
     correct_prediction = tf.equal(tf.argmax(resnet.last_layer, 1), y=resnet.y_ts)
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
+    resnet.compile(target=server.target)
 
     # Get Data
     train_x, train_y, test_x, test_y = load_data(parser.datapath)
@@ -134,25 +141,12 @@ def main():
     resnet = ResNet(batch=parser.batch)
     create_model(resnet)
 
-    # Cluster Initialization
-    cluster_spec = json.load(open('config.json', 'rt'))
-    cluster = tf.train.ClusterSpec(cluster_spec)
-    server = tf.train.Server(cluster, job_name='host', task_index=0)
-
-    print('-' * 60)
-    print(cluster)
-    print('-' * 60)
-    print(dir(cluster))
-    print('-' * 60)
-
-    sess: tf.Session = resnet.compile(target=server.target)
-    print(sess)
-
-
-    # if parser.mode == 'train':
-    #     train(resnet)
-    # elif parser.mode == 'test':
-    #     evaluate(resnet)
+    if parser.mode == 'train':
+        print('Start Training')
+        train(resnet)
+    elif parser.mode == 'test':
+        print('Start Evaluation')
+        evaluate(resnet)
 
 
 if __name__ == '__main__':
