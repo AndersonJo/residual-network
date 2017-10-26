@@ -191,6 +191,9 @@ class ResNet(object):
         self.saver.save(self.sess, path)
 
     def restore(self, path='/tmp/resnet_anderson.ckpt'):
+        if self.saver is None:
+            self.saver = tf.train.Saver()
+        print(f'Restoring "{path}" model')
         self.saver.restore(self.sess, path)
 
     @property

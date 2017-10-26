@@ -1,6 +1,7 @@
 # Project
 .idea
 .ipynb_checkpoints
+resnet_tensorflow.egg-info
 
 # Python 
 *.pyc

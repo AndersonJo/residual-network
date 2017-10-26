@@ -1,15 +1,11 @@
-import argparse
 import os
 import pickle
 import tarfile
 from urllib.request import urlopen
-import tensorflow as tf
-import scipy
 
 import numpy as np
 
 # Constants
-ROOT = os.path.abspath(os.path.dirname(__file__))
 CIFAR_URL = 'https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz'
 
 
@@ -17,7 +13,7 @@ def _download(dest_dir):
     """
     데이터가 없으면 CIFAR-10 데이터셋을 인터넷에서 다운로드한다.
     """
-    tar_path = os.path.join(dest_dir, 'cifar-10-python.tar.gz')
+    tar_path = os.path.abspath(os.path.join(dest_dir, 'cifar-10-python.tar.gz'))
 
     # 저장할 디렉토리 생성
     if not os.path.exists(dest_dir):
@@ -38,7 +34,7 @@ def _uncompress(data_path):
     """
     압축된 cifar-10-python.tar.gz 파일을 읽어서 data_path에 압축을 해제한다.
     """
-    data_path = os.path.join(ROOT, data_path)
+    data_path = os.path.abspath(data_path)
     tar_path = os.path.join(data_path, 'cifar-10-python.tar.gz')
     uncompressed_path = os.path.join(data_path, 'cifar-10-batches-py')
 
@@ -67,9 +63,9 @@ def _preprocessing1(data_path, force=False):
     """
     1차 과정으로 압축을 풀은 데이터 파일로 부터 읽어드린후, 각각의 파일을 합쳐서 새로운 파일로 저장을 한다.
     """
-    preprocessed_path = os.path.join(ROOT, data_path, 'cifar-10-preprocessed.pkl')
-    uncompressed_dir = os.path.join(ROOT, data_path, 'cifar-10-batches-py')
-    os.path.join(ROOT, data_path, 'cifar10.')
+    abs_path = os.path.abspath(data_path)
+    preprocessed_path = os.path.join(abs_path, 'cifar-10-preprocessed.pkl')
+    uncompressed_dir = os.path.join(abs_path, 'cifar-10-batches-py')
 
     if os.path.exists(preprocessed_path) and not force:
         return preprocessed_path

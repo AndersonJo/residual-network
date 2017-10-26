@@ -1,16 +1,17 @@
 import argparse
+from queue import deque
 
 import numpy as np
 import tensorflow as tf
 from keras.preprocessing.image import ImageDataGenerator
 
-from model import ResNet
-from tool import load_data
-from queue import deque
+from resnet.model import ResNet
+from resnet.tool import load_data
 
 # Parse Arguments
 parser = argparse.ArgumentParser(description="CIFAR-10 Classification with Deep Residual Neural Network")
-parser.add_argument('--datapath', default='_dataset', type=str, help='the directory path to store Iris data set')
+parser.add_argument('--mode', default='train', type=str, help='"train" or "test"')
+parser.add_argument('--datapath', default='/tmp/cifar10', type=str, help='the directory path to store Iris data set')
 parser.add_argument('--epoch', default=30, type=int, )
 parser.add_argument('--batch', default=32, type=int, help='batch size')
 parser.add_argument('--save_interval', default=5000, type=int,
@@ -134,11 +135,12 @@ def main():
     resnet = ResNet(batch=parser.batch)
     create_model(resnet)
     resnet.compile()
-
-    resnet.save()
     resnet.restore()
-    train(resnet)
-    evaluate(resnet)
+
+    if parser.mode == 'train':
+        train(resnet)
+    elif parser.mode == 'test':
+        evaluate(resnet)
 
 
 if __name__ == '__main__':
